@@ -1,67 +1,86 @@
-**Mass VC→SA IPL Converter**
-
-A simple cross‑platform GUI tool for batch‑converting Grand Theft Auto: Vice City `.ipl` map files into the SA (San Andreas) format. Ideal for modders who need to migrate or reuse Vice City IPLs in San Andreas.
-
----
-
-## Key Features
-
-* **Graphical Interface**
-  Browse for your GTA VC installation folder and select an output directory—no command‑line needed.
-
-* **Recursive File Discovery**
-  Automatically scans subdirectories for all `.ipl` files in the chosen input path.
-
-* **Field Extraction & Reformatting**
-  Reads each IPL, extracts the essential 9 parameters (object ID, model ID, position XYZ, rotation, interior, player index, and flags), appends a default “-1” for streaming radius, and wraps them between `inst` / `end` markers.
-
-* **Progress Tracking**
-  Displays a live progress bar indicating how many files have been processed.
-
-* **Robustness**
-
-  * Skips empty or malformed lines
-  * Creates necessary subfolders in the output directory
-  * Ignores non‑IPL files
+**Mass III/VC → SA IPL & IDE Converter**
+A standalone GUI tool for batch‑converting Grand Theft Auto III and Vice City map placement and definition files into San Andreas–compatible formats.
 
 ---
 
-## How It Works
+## How it works
 
 1. **Directory Selection**
 
-   * Click **Browse…** under **Input GTA VC Directory** to pick your Vice City game folder.
-   * Click **Browse…** under **Output Directory** for where converted files should go.
+   * **Input**: Point the tool at a directory containing `.ipl` (Item Placement) and `.ide` (Item Definition) files from GTA III or Vice City.
+   * **Output**: Choose an empty (or existing) folder where the converted San Andreas files will be written, preserving sub‑directory structure.
 
-2. **Batch Conversion**
+2. **Batch Processing**
 
-   * Hitting **Convert All IPL Files** spawns a background thread.
-   * The tool walks through every folder under the input path, collecting `.ipl` files.
-   * For each file:
+   * Recursively scans the input folder for all `.ipl` and `.ide` files.
+   * Displays a progress bar indicating total files and conversion progress.
+   * Runs file conversions on a background thread to keep the UI responsive.
 
-     * Reads raw text, normalizes line endings.
-     * Parses comma‑separated values, selecting only the fields needed by SA (`object ID, model ID, X, Y, Z, rotation, interior ID, player index, flags`).
-     * Prepends `inst`, appends `end`, and writes the reformatted file to the corresponding path under the output directory.
+3. **IPL Conversion**
 
-3. **Completion**
+   * **GTA III `.ipl`** (12‑field):
 
-   * Upon finishing, a pop‑up confirms the total number of files converted.
+     * Fields: `ID, ModelName, PosX, PosY, PosZ, ScaleX, ScaleY, ScaleZ, RotX, RotY, RotZ, RotW`
+     * Converts to San Andreas format:
+
+       ```
+       inst
+       ID, ModelName, 0, PosX, PosY, PosZ, RotX, RotY, RotZ, RotW, -1
+       …  
+       end
+       ```
+
+       * Sets **interior** to `0` (default)
+       * Skips scale (SA does not support per-instance scaling)
+       * Appends LOD index `-1`
+
+   * **Vice City `.ipl`** (13+ field):
+
+     * Fields: `ID, ModelName, Interior, PosX, PosY, PosZ, ScaleX, ScaleY, ScaleZ, RotX, RotY, RotZ, RotW`
+     * Converts to San Andreas format:
+
+       ```
+       inst
+       ID, ModelName, Interior, PosX, PosY, PosZ, RotX, RotY, RotZ, RotW, -1
+       …  
+       end
+       ```
+
+       * Preserves **Interior** value
+       * Skips scale
+       * Sets LOD index to `-1`
+
+4. **IDE Conversion**
+
+   * Parses and converts the following sections, handling GTA III and VC variants into SA equivalents:
+
+     * **`objs`** (map object definitions):
+
+       * Type 1–3 entries copied directly
+       * Single-mesh entries optionally rewritten to SA “Type 4” (dropping mesh count)
+     * **`tobj`** (timed objects):
+
+       * Type 1–3 entries copied directly
+       * Single-mesh entries optionally rewritten to SA “Type 4” (dropping mesh count)
+     * **`hier`** (cutscene object list): copied identically
+     * **`peds`** (pedestrian definitions):
+
+       * GTA III entries extended with default SA fields (`Flags=0`, empty voice, etc.)
+       * Vice City entries preserve anim & radio fields and fill SA‑only fields with defaults
+
+   * All other sections, comments, and unsupported entries are passed through unchanged.
+
+5. **Output**
+
+   * Writes each converted file to the matching relative path under the output directory.
+   * Ensures all intermediate directories exist before writing.
+   * Upon completion, notifies the user of total files converted.
 
 ---
 
-## Requirements
+**Requirements:**
 
-* Python 3.x
-* `tkinter` (usually bundled with Python)
+* Python 3.x
+* `tkinter` for the GUI
 
----
-
-## Usage
-
-1. Install Python 3 if you haven’t already.
-2. Save the script and run:
-
-   ```bash
-   python3 mass_ipl_converter.py
-   ```
-3. Follow the GUI prompts to select folders and watch the conversion proceed.
+Just run the script, select your source and target directories, and click **Convert All IPL & IDE Files** to migrate your GTA III/VC map data to San Andreas format.
