@@ -18,7 +18,6 @@ This tool is designed to convert GTA III and Vice City `.ide` and `.ipl` files i
 
 * Batch converts all `.ide` and `.ipl` files in a selected folder.
 * Maintains original folder structure in the output directory.
-* No extra dependencies – runs as a standalone desktop application.
 * User-friendly interface built with Tkinter.
 * Progress bar included for large conversions.
 
